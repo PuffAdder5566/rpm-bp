@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Manager - RPM System</title>
+    <style>
+            * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .user-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-bar span {
+            color: white;
+            font-weight: bold;
+        }
+
+        .user-bar button {
+            padding: 5px 10px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .account-manager {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .account-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .account-header h2 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+        }
+
+        .account-search {
+            width: 300px;
+            padding: 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .account-search:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .accounts-table {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .table-content {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e6ed;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .role-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .role-admin { background: #d4edda; color: #155724; }
+        .role-clinic { background: #e2e3e5; color: #383d41; }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn {
+            background: #3498db;
+            color: white;
+            margin-right: 5px;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+
+        .add-account-btn {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+        }
+
+        .add-account-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .account-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .account-search {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="authOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 10px; text-align: center;">
+            <h3>Session Expired</h3>
+            <p>Your session has expired. Please login again.</p>
+            <button onclick="window.location.href='/login'" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">Login</button>
+        </div>
+    </div>
+   <!-- <div style="position: absolute; top: 20px; right: 20px;">
+    <% if (typeof user !== 'undefined') { %>
+        <span style="color: white;">Logged in as <%= user.username %></span>
+        <a href="/logout" style="margin-left: 10px; color: white; text-decoration: underline;">Logout</a>
+    <% } else { %>
+        <a href="/login" style="color: white; text-decoration: underline;">Login</a>
+    <% } %>
+</div> -->
+<!-- 
+    <div class="user-bar">
+        <span id="currentClinic"><%= currentUser.clinicName %></span>
+        <button onclick="logout()">Logout</button>
+    </div> -->
+    <div class="user-bar">
+    <% if (currentUser && currentUser.clinicName) { %>
+        <span id="currentClinic"><%= currentUser.clinicName %></span>
+    <% } %>
+    <button onclick="logout()">Logout</button>
+</div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Account Manager</h1>
+            <p>Manage all user accounts in the RPM system</p>
+            <a href="/dashboard" onclick="window.location.href='/dashboard'; return false;">dashboard</a>          
+
+        </div>
+
+        <div class="account-manager">
+            <div class="account-header">
+                <h2>User Accounts</h2>
+                <input type="text" class="account-search" placeholder="Search accounts..." id="accountSearch">
+            </div>
+
+            <div class="accounts-table">
+                <div class="table-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>All System Accounts</span>
+                        <button class="add-account-btn" onclick="showAddAccountModal()">+ Add Account</button>
+                    </div>
+                </div>
+                <div class="table-content">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Clinic Name</th>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accountsTableBody">
+                            <% accounts.forEach(account => { %>
+                                <tr>
+                                    <td><%= account.clinicName %></td>
+                                    <td><%= account.username %></td>
+                                    <td><span class="role-badge <%= account.role === 'admin' ? 'role-admin' : 'role-clinic' %>">
+                                        <%= account.role === 'admin' ? 'Administrator' : 'Clinic Staff' %>
+                                    </span></td>
+                                    <td><%= new Date(account.createdAt).toLocaleDateString() %></td>
+                                    <td>
+                                        <button class="action-btn edit-btn" onclick="editAccount('<%= account.id %>')">Edit</button>
+                                        <% if (account.role !== 'admin') { %>
+                                            <button class="action-btn delete-btn" onclick="confirmDelete('<%= account.id %>')">Delete</button>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Account Modal -->
+    <div id="accountModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalAccountTitle">Add New Account</h3>
+            <form id="accountForm" action="/accounts" method="POST">
+                <input type="hidden" id="accountId" name="id" value="">
+                <div class="form-group">
+                    <label for="modalClinicName">Clinic Name</label>
+                    <input type="text" id="modalClinicName" name="clinicName" required>
+                </div>
+                <div class="form-group">
+                    <label for="modalUsername">Username</label>
+                    <input type="text" id="modalUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="modalPassword">Password</label>
+                    <input type="password" id="modalPassword" name="password">
+                </div>
+                <div class="form-group">
+                    <label for="modalConfirmPassword">Confirm Password</label>
+                    <input type="password" id="modalConfirmPassword">
+                </div>
+                <div class="form-group">
+                    <label for="modalRole">Account Type</label>
+                    <select id="modalRole" name="role" required>
+                        <option value="clinic">Clinic Staff</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+                <div class="form-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="hideAccountModal()">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="modalDeleteBtn" style="display: none;" onclick="deleteAccount()">Delete</button>
+                    <button type="submit" class="btn btn-primary" id="modalSaveBtn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Client-side JavaScript remains largely the same
+        // Just update the AJAX calls to interact with your server
+        
+        let currentEditingId = null;
+
+        function showAddAccountModal() {
+            currentEditingId = null;
+            document.getElementById('modalAccountTitle').textContent = 'Add New Account';
+            document.getElementById('accountId').value = '';
+            document.getElementById('modalClinicName').value = '';
+            document.getElementById('modalUsername').value = '';
+            document.getElementById('modalPassword').value = '';
+            document.getElementById('modalConfirmPassword').value = '';
+            document.getElementById('modalRole').value = 'clinic';
+            document.getElementById('modalDeleteBtn').style.display = 'none';
+            document.getElementById('modalSaveBtn').textContent = 'Save';
+            document.getElementById('accountModal').style.display = 'block';
+        }
+
+        function editAccount(id) {
+            fetch(`/accounts/${id}`)
+                .then(response => response.json())
+                .then(account => {
+                    currentEditingId = id;
+                    document.getElementById('modalAccountTitle').textContent = 'Edit Account';
+                    document.getElementById('accountId').value = account.id;
+                    document.getElementById('modalClinicName').value = account.clinicName;
+                    document.getElementById('modalUsername').value = account.username;
+                    document.getElementById('modalPassword').value = '';
+                    document.getElementById('modalConfirmPassword').value = '';
+                    document.getElementById('modalRole').value = account.role;
+                    document.getElementById('modalDeleteBtn').style.display = account.role !== 'admin' ? 'block' : 'none';
+                    document.getElementById('modalSaveBtn').textContent = 'Update';
+                    document.getElementById('accountModal').style.display = 'block';
+                });
+        }
+
+        function hideAccountModal() {
+            document.getElementById('accountModal').style.display = 'none';
+        }
+
+        function confirmDelete(id) {
+            if (confirm('Are you sure you want to delete this account? This cannot be undone.')) {
+                deleteAccount(id);
+            }
+        }
+
+        function deleteAccount(id = currentEditingId) {
+            if (!id) return;
+
+            fetch(`/accounts/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            });
+        }
+
+        // Handle form submission
+        document.getElementById('accountForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const password = formData.get('password');
+            const confirmPassword = document.getElementById('modalConfirmPassword').value;
+            
+            // Client-side validation
+            if (!formData.get('clinicName') || !formData.get('username') || !formData.get('role')) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            if (!currentEditingId && (!password || !confirmPassword)) {
+                alert('Please enter and confirm password for new account');
+                return;
+            }
+
+            if (password && password !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+
+            if (password && password.length < 6) {
+                alert('Password must be at least 6 characters');
+                return;
+            }
+
+            // Submit the form
+            fetch(this.action, {
+                method: this.id.value ? 'PUT' : 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            });
+        });
+
+        // Search functionality
+        document.getElementById('accountSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#accountsTableBody tr');
+            
+            rows.forEach(row => {
+                const clinicName = row.cells[0].textContent.toLowerCase();
+                const username = row.cells[1].textContent.toLowerCase();
+                const role = row.cells[2].textContent.toLowerCase();
+                
+                if (clinicName.includes(searchTerm) || username.includes(searchTerm) || role.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Logout function
+        function logout() {
+            fetch('/logout', {
+                method: 'POST'
+            })
+            .then(() => {
+                window.location.href = '/login';
+            });
+        }
+
+        // Session timeout (30 minutes)
+        let sessionTimeout;
+        function resetSessionTimer() {
+            clearTimeout(sessionTimeout);
+            sessionTimeout = setTimeout(() => {
+                document.getElementById('authOverlay').style.display = 'flex';
+            }, 30 * 60 * 1000);
+        }
+
+        // Initialize session timer
+        resetSessionTimer();
+        document.addEventListener('mousemove', resetSessionTimer);
+        document.addEventListener('keypress', resetSessionTimer);
+        document.addEventListener('click', resetSessionTimer);
+    </script>
+</body>
+</html>

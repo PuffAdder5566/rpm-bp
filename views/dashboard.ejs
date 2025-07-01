@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPM Blood Pressure Management System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .patient-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .patient-panel h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .patient-search {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .patient-search:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .patient-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .patient-item {
+            padding: 15px;
+            border: 1px solid #e0e6ed;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .patient-item:hover {
+            background: #e3f2fd;
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .patient-item.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .patient-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .patient-id {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .main-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .patient-details {
+            margin-bottom: 30px;
+        }
+
+        .patient-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e6ed;
+        }
+
+        .patient-info h3 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .patient-meta {
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .status-normal { background: #d4edda; color: #155724; }
+        .status-elevated { background: #fff3cd; color: #856404; }
+        .status-high { background: #f8d7da; color: #721c24; }
+        .status-critical { background: #f5c6cb; color: #491217; }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .chart-container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            color: #2c3e50;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .readings-table {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .table-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e6ed;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .add-reading-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .add-patient-btn {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+        }
+
+        .add-reading-btn:hover, .add-patient-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .user-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-bar span {
+            color: white;
+            font-weight: bold;
+        }
+
+        .user-bar button {
+            padding: 5px 10px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .user-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .user-info a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .user-info a:hover {
+            text-decoration: underline;
+        }
+
+        #authOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+        }
+
+        .add-reading-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-reading-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .chart-container {
+    overflow: hidden;
+    position: relative;
+}
+
+.chart-container canvas {
+    max-width: 100%;
+    height: 400px !important;
+}
+    </style>
+</head>
+<body>
+    <div id="authOverlay">
+        <div style="background: white; padding: 30px; border-radius: 10px; text-align: center;">
+            <h3>Session Expired</h3>
+            <p>Your session has expired. Please login again.</p>
+            <button onclick="window.location.href='/login'" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">Login</button>
+        </div>
+    </div>
+
+    <div class="user-bar">
+        <span id="currentClinic"><%= user.clinicName %></span>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>RPM Blood Pressure Management System</h1>
+            <p>Comprehensive patient monitoring dashboard for healthcare providers</p>
+            <!-- <a href="/account-manager">Account Manager</a> -->
+<a href="/account-manager" onclick="event.preventDefault(); window.location.href='/account-manager';">Account Manager</a>
+            <div class="user-info">
+                Logged in as: <strong><%= user.username %></strong>
+                <a href="/logout" style="margin-left: 15px;">Logout</a>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="patient-panel">
+                <h2>
+                    Patient Directory
+                    <button class="add-patient-btn" onclick="showAddPatientModal()">+ Add Patient</button>
+                </h2>
+                <input type="text" class="patient-search" placeholder="Search patients..." id="patientSearch">
+                <div class="patient-list" id="patientList">
+                    <% patients.forEach(patient => { %>
+                        <div class="patient-item" data-id="<%= patient.id %>">
+                            <div class="patient-name"><%= patient.name %></div>
+                            <div class="patient-id">
+                                ID: <%= patient.id %> • Age: <%= patient.age || 'N/A' %> • <%= patient.medical_condition || 'No condition specified' %>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+
+            <div class="main-panel">
+                <div class="patient-details" id="patientDetails">
+                    <div class="patient-header">
+                        <div class="patient-info">
+                            <h3 id="patientName">Select a patient</h3>
+                            <div class="patient-meta" id="patientMeta">Choose a patient from the directory to view their blood pressure data</div>
+                        </div>
+                        <div id="patientStatus"></div>
+                    </div>
+                </div>
+
+                <div class="metrics-grid" id="metricsGrid" style="display: none;">
+                    <div class="metric-card">
+                        <div class="metric-value" id="lastSystolic">--</div>
+                        <div class="metric-label">Last Systolic</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="lastDiastolic">--</div>
+                        <div class="metric-label">Last Diastolic</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="avgSystolic">--</div>
+                        <div class="metric-label">Avg Systolic (7d)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="avgDiastolic">--</div>
+                        <div class="metric-label">Avg Diastolic (7d)</div>
+                    </div>
+                </div>
+
+                <!-- <div class="chart-container" id="chartContainer" style="display: none;">
+                    <div class="chart-title">Blood Pressure Trends (Last 30 Days)</div>
+                    <canvas id="bpChart"></canvas>
+                </div> -->
+                <div class="chart-container" id="chartContainer" style="display: none;">
+    <div class="chart-title">Blood Pressure Trends (Last 30 Days)</div>
+    <div style="height: 400px; position: relative;">
+        <canvas id="bpChart" height="400"></canvas>
+    </div>
+</div>
+
+                <div class="readings-table" id="readingsTable" style="display: none;">
+                    <div class="table-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Recent Blood Pressure Readings</span>
+                            <button class="add-reading-btn" onclick="showAddReadingModal()">Add Reading</button>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Systolic</th>
+                                    <th>Diastolic</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="readingsTableBody">
+                                <!-- Readings will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Reading Modal -->
+    <div id="addReadingModal" class="modal">
+        <div class="modal-content">
+            <h3>Add New Blood Pressure Reading</h3>
+            <input type="hidden" id="selectedPatientId">
+            <div class="form-group">
+                <label for="readingDate">Date</label>
+                <input type="date" id="readingDate" required>
+            </div>
+            <div class="form-group">
+                <label for="readingTime">Time</label>
+                <input type="time" id="readingTime" required>
+            </div>
+            <div class="form-group">
+                <label for="systolicReading">Systolic (mmHg)</label>
+                <input type="number" id="systolicReading" min="60" max="250" required>
+            </div>
+            <div class="form-group">
+                <label for="diastolicReading">Diastolic (mmHg)</label>
+                <input type="number" id="diastolicReading" min="40" max="150" required>
+            </div>
+            <div class="form-group">
+                <label for="readingNotes">Notes (optional)</label>
+                <input type="text" id="readingNotes" placeholder="Any additional notes...">
+            </div>
+            <div class="form-buttons">
+                <button class="btn btn-secondary" onclick="hideAddReadingModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="addReading()">Add Reading</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Patient Modal -->
+    <div id="addPatientModal" class="modal">
+        <div class="modal-content">
+            <h3>Add New Patient</h3>
+            <div class="form-group">
+                <label for="patientNameInput">Full Name</label>
+                <input type="text" id="patientNameInput" required>
+            </div>
+            <div class="form-group">
+                <label for="patientAge">Age</label>
+                <input type="number" id="patientAge" min="1" max="120" required>
+            </div>
+            <div class="form-group">
+                <label for="patientCondition">Condition</label>
+                <select id="patientCondition" required>
+                    <option value="">Select Medical Condition</option>
+                    <option value="Normal BP">Normal BP</option>
+                    <option value="Pre-hypertension">Pre-hypertension</option>
+                    <option value="Hypertension">Hypertension</option>
+                    <option value="Severe Hypertension">Severe Hypertension</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="patientNotes">Initial Notes (optional)</label>
+                <input type="text" id="patientNotes" placeholder="Any additional information...">
+            </div>
+            <div class="form-buttons">
+                <button class="btn btn-secondary" onclick="hideAddPatientModal()">Cancel</button>
+                <button class="btn btn-success" onclick="addPatient()">Add Patient</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden div for patient data -->
+    <div id="patients-data" style="display:none;">
+        <%- JSON.stringify(patients || []) %>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedPatient = null;
+        let chart = null;
+        let patients = [];
+
+        // DOM Elements
+        const elements = {
+            patientList: document.getElementById('patientList'),
+            patientName: document.getElementById('patientName'),
+            patientMeta: document.getElementById('patientMeta'),
+            patientStatus: document.getElementById('patientStatus'),
+            metricsGrid: document.getElementById('metricsGrid'),
+            chartContainer: document.getElementById('chartContainer'),
+            readingsTable: document.getElementById('readingsTable'),
+            readingsTableBody: document.getElementById('readingsTableBody'),
+            patientSearch: document.getElementById('patientSearch'),
+            lastSystolic: document.getElementById('lastSystolic'),
+            lastDiastolic: document.getElementById('lastDiastolic'),
+            avgSystolic: document.getElementById('avgSystolic'),
+            avgDiastolic: document.getElementById('avgDiastolic'),
+            addReadingModal: document.getElementById('addReadingModal'),
+            readingDate: document.getElementById('readingDate'),
+            readingTime: document.getElementById('readingTime'),
+            systolicReading: document.getElementById('systolicReading'),
+            diastolicReading: document.getElementById('diastolicReading'),
+            readingNotes: document.getElementById('readingNotes'),
+            selectedPatientId: document.getElementById('selectedPatientId'),
+            addPatientModal: document.getElementById('addPatientModal'),
+            patientNameInput: document.getElementById('patientNameInput'),
+            patientAge: document.getElementById('patientAge'),
+            patientCondition: document.getElementById('patientCondition'),
+            patientNotes: document.getElementById('patientNotes')
+        };
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check session first
+            checkSession();
+            
+            // Get patients data from server-rendered template
+            try {
+                patients = JSON.parse(document.getElementById('patients-data').textContent || '[]');
+            } catch (e) {
+                console.error('Error parsing patients data:', e);
+                patients = [];
+            }
+
+            // Set current date/time as default for new readings
+            const now = new Date();
+            elements.readingDate.value = now.toISOString().split('T')[0];
+            elements.readingTime.value = now.toTimeString().substr(0, 5);
+            
+            // Setup event listeners
+            setupEventListeners();
+            setupPatientListClickHandlers();
+            
+            // Auto-select first patient if none selected
+            if (patients.length > 0 && !selectedPatient) {
+                selectPatient(patients[0].id);
+            }
+        });
+
+        // Session management functions
+        function checkSession() {
+            fetch('/api/check-session', {
+                credentials: 'include'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Session check failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.valid) {
+                    document.getElementById('authOverlay').style.display = 'flex';
+                }
+            })
+            .catch(error => {
+                console.error('Session check error:', error);
+                document.getElementById('authOverlay').style.display = 'flex';
+            });
+        }
+
+        function setupPatientListClickHandlers() {
+            document.querySelectorAll('.patient-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const patientId = parseInt(item.dataset.id);
+                    selectPatient(patientId);
+                });
+            });
+        }
+
+        async function selectPatient(patientId) {
+            try {
+                elements.patientName.textContent = 'Loading...';
+                elements.patientMeta.textContent = '';
+                
+                const response = await fetch(`/dashboard/api/patients/${patientId}`, {
+                    credentials: 'include'
+                });
+                
+                if (response.status === 401) {
+                    window.location.href = '/login?sessionExpired=true';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load patient data');
+                }
+                
+                selectedPatient = data.patient;
+                
+                // Initialize readings array if it doesn't exist
+                if (!selectedPatient.readings) {
+                    selectedPatient.readings = [];
+                }
+                
+                elements.selectedPatientId.value = patientId;
+                
+                // Update UI
+                updateActivePatient(patientId);
+                renderPatientDetails();
+                renderMetrics();
+                renderChart();
+                renderReadingsTable();
+                
+            } catch (error) {
+                console.error('Error selecting patient:', error);
+                
+                if (error.message.includes('Session') || error.message.includes('Unauthorized')) {
+                    window.location.href = '/login?sessionExpired=true';
+                } else {
+                    showError('Failed to load patient data. Please try again.');
+                }
+                
+                // Reset UI to empty state
+                elements.patientName.textContent = 'Select a patient';
+                elements.patientMeta.textContent = 'Choose a patient from the directory';
+                elements.patientStatus.innerHTML = '';
+                elements.metricsGrid.style.display = 'none';
+                elements.chartContainer.style.display = 'none';
+                elements.readingsTable.style.display = 'none';
+            }
+        }
+
+        function updateActivePatient(patientId) {
+            document.querySelectorAll('.patient-item').forEach(item => {
+                item.classList.toggle('active', parseInt(item.dataset.id) === patientId);
+            });
+        }
+
+        function renderPatientDetails() {
+            if (!selectedPatient) return;
+
+            elements.patientName.textContent = selectedPatient.name;
+            elements.patientMeta.textContent = 
+                `Patient ID: ${selectedPatient.id} • Age: ${selectedPatient.age || 'N/A'} • Condition: ${selectedPatient.medical_condition || 'Not specified'}`;
+            
+            if (selectedPatient.readings && selectedPatient.readings.length > 0) {
+                const status = getBPStatus(selectedPatient.readings[0]);
+                elements.patientStatus.innerHTML = `<span class="status-badge ${status.class}">${status.text}</span>`;
+            } else {
+                elements.patientStatus.innerHTML = '<span class="status-badge">No readings yet</span>';
+            }
+            
+            elements.metricsGrid.style.display = 'grid';
+            elements.chartContainer.style.display = 'block';
+            elements.readingsTable.style.display = 'block';
+        }
+
+        function renderMetrics() {
+            if (!selectedPatient || !selectedPatient.readings || selectedPatient.readings.length === 0) {
+                resetMetrics();
+                elements.lastSystolic.textContent = 'No data';
+                elements.lastDiastolic.textContent = 'No data';
+                elements.avgSystolic.textContent = 'No data';
+                elements.avgDiastolic.textContent = 'No data';
+                return;
+            }
+
+            const latest = selectedPatient.readings[0];
+            const recent = selectedPatient.readings.slice(0, 7);
+
+            elements.lastSystolic.textContent = latest.systolic;
+            elements.lastDiastolic.textContent = latest.diastolic;
+            
+            const avgSystolic = Math.round(recent.reduce((sum, r) => sum + r.systolic, 0) / recent.length);
+            const avgDiastolic = Math.round(recent.reduce((sum, r) => sum + r.diastolic, 0) / recent.length);
+            
+            elements.avgSystolic.textContent = avgSystolic;
+            elements.avgDiastolic.textContent = avgDiastolic;
+        }
+
+        function resetMetrics() {
+            elements.lastSystolic.textContent = '--';
+            elements.lastDiastolic.textContent = '--';
+            elements.avgSystolic.textContent = '--';
+            elements.avgDiastolic.textContent = '--';
+        }
+
+        function renderChart() {
+    const ctx = document.getElementById('bpChart');
+    if (chart) {
+        chart.destroy();
+    }
+
+    if (!selectedPatient || !selectedPatient.readings || selectedPatient.readings.length === 0) {
+        if (ctx) {
+            ctx.style.display = 'none';
+            document.getElementById('chartContainer').querySelector('.chart-title').textContent = 
+                'No readings data available';
+        }
+        return;
+    }
+
+    // Prepare data - limit to last 30 readings
+    const readings = selectedPatient.readings
+        .slice(0, 30)
+        .reverse();
+    
+    const labels = readings.map(r => {
+        const date = new Date(r.date + 'T' + r.time);
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    });
+
+    // Create gradient for bars
+    const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(231, 76, 60, 0.8)'); // Red
+    gradient.addColorStop(1, 'rgba(231, 76, 60, 0.2)'); // Lighter red
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Systolic',
+                data: readings.map(r => r.systolic),
+                backgroundColor: gradient,
+                borderColor: '#e74c3c',
+                borderWidth: 1,
+                borderRadius: 4
+            }, {
+                label: 'Diastolic',
+                data: readings.map(r => r.diastolic),
+                backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                borderColor: '#3498db',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 50,
+                    max: 200,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        stepSize: 20
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                        autoSkip: true,
+                        maxTicksLimit: 10
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw} mmHg`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1000
+            }
+        }
+    });
+}
+
+
+
+        function renderReadingsTable() {
+            if (!selectedPatient || !selectedPatient.readings || selectedPatient.readings.length === 0) {
+                elements.readingsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 20px;">
+                            No readings available. 
+                            <button class="add-reading-btn" onclick="showAddReadingModal()" 
+                                    style="padding: 5px 10px; margin-left: 10px;">
+                                Add First Reading
+                            </button>
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            elements.readingsTableBody.innerHTML = '';
+            
+            selectedPatient.readings.forEach(reading => {
+                const row = document.createElement('tr');
+                const status = getBPStatus(reading);
+                const date = new Date(reading.date);
+                
+                row.innerHTML = `
+                    <td>${date.toLocaleDateString()}</td>
+                    <td>${reading.time}</td>
+                    <td>${reading.systolic}</td>
+                    <td>${reading.diastolic}</td>
+                    <td><span class="status-badge ${status.class}">${status.text}</span></td>
+                    <td>${reading.notes || '-'}</td>
+                `;
+                
+                elements.readingsTableBody.appendChild(row);
+            });
+        }
+
+        function getBPStatus(reading) {
+            const systolic = reading.systolic;
+            const diastolic = reading.diastolic;
+
+            if (systolic >= 180 || diastolic >= 110) {
+                return { text: 'Critical', class: 'status-critical' };
+            } else if (systolic >= 140 || diastolic >= 90) {
+                return { text: 'High', class: 'status-high' };
+            } else if (systolic >= 120 || diastolic >= 80) {
+                return { text: 'Elevated', class: 'status-elevated' };
+            } else {
+                return { text: 'Normal', class: 'status-normal' };
+            }
+        }
+
+        function showAddReadingModal() {
+            if (!selectedPatient) {
+                showError('Please select a patient first');
+                return;
+            }
+            
+            const now = new Date();
+            elements.readingDate.value = now.toISOString().split('T')[0];
+            elements.readingTime.value = now.toTimeString().substr(0, 5);
+            elements.systolicReading.value = '';
+            elements.diastolicReading.value = '';
+            elements.readingNotes.value = '';
+            
+            elements.addReadingModal.style.display = 'block';
+        }
+
+        function hideAddReadingModal() {
+            elements.addReadingModal.style.display = 'none';
+        }
+
+    async function addReading() {
+    if (!selectedPatient) {
+        showError('Please select a patient first');
+        return;
+    }
+
+    const readingData = {
+        date: elements.readingDate.value,
+        time: elements.readingTime.value,
+        systolic: parseInt(elements.systolicReading.value),
+        diastolic: parseInt(elements.diastolicReading.value),
+        notes: elements.readingNotes.value,
+        patient_id: selectedPatient.id
+    };
+
+    // Validation
+    if (!readingData.date || !readingData.time || isNaN(readingData.systolic) || isNaN(readingData.diastolic)) {
+        showError('Please fill in all required fields with valid values');
+        return;
+    }
+
+    try {
+        const addBtn = document.querySelector('#addReadingModal .btn-primary');
+        addBtn.disabled = true;
+        addBtn.textContent = 'Adding...';
+
+        const response = await fetch('/api/readings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include', // Important for sessions
+            body: JSON.stringify(readingData)
+        });
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(text || 'Invalid server response');
+        }
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to add reading');
+        }
+
+        // Refresh patient data
+        await selectPatient(selectedPatient.id);
+        hideAddReadingModal();
+        showSuccess('Reading added successfully!');
+
+    } catch (error) {
+        console.error('Add reading error:', error);
+        showError(error.message || 'Database operation failed. Please check console for details.');
+    } finally {
+        const addBtn = document.querySelector('#addReadingModal .btn-primary');
+        if (addBtn) {
+            addBtn.disabled = false;
+            addBtn.textContent = 'Add Reading';
+        }
+    }
+}
+        function showAddPatientModal() {
+            elements.patientNameInput.value = '';
+            elements.patientAge.value = '';
+            elements.patientCondition.value = '';
+            elements.patientNotes.value = '';
+            
+            elements.addPatientModal.style.display = 'block';
+        }
+
+        function hideAddPatientModal() {
+            elements.addPatientModal.style.display = 'none';
+        }
+
+        async function addPatient() {
+            const patientData = {
+                name: elements.patientNameInput.value.trim(),
+                age: parseInt(elements.patientAge.value),
+                medical_condition: elements.patientCondition.value,
+                notes: elements.patientNotes.value
+            };
+
+            if (!patientData.name || isNaN(patientData.age)) {
+                showError('Please fill in all required fields');
+                return;
+            }
+
+            if (patientData.age < 1 || patientData.age > 120) {
+                showError('Age must be between 1-120');
+                return;
+            }
+
+            try {
+                const addBtn = document.querySelector('#addPatientModal .btn-success');
+                addBtn.disabled = true;
+                addBtn.textContent = 'Adding...';
+
+                const response = await fetch('/api/patients', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(patientData)
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`Expected JSON, got: ${text.substring(0, 100)}...`);
+                }
+
+                const data = await response.json();
+                
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to add patient');
+                }
+
+                patients.push(data.patient);
+                document.querySelectorAll('.patient-item').forEach(item => {
+                    item.removeEventListener('click', selectPatient);
+                });
+                
+                const patientList = document.getElementById('patientList');
+                const newPatientItem = document.createElement('div');
+                newPatientItem.className = 'patient-item';
+                newPatientItem.dataset.id = data.patient.id;
+                newPatientItem.innerHTML = `
+                    <div class="patient-name">${data.patient.name}</div>
+                    <div class="patient-id">
+                        ID: ${data.patient.id} • Age: ${data.patient.age || 'N/A'} • ${data.patient.medical_condition || 'No condition specified'}
+                    </div>
+                `;
+                newPatientItem.addEventListener('click', () => selectPatient(data.patient.id));
+                patientList.appendChild(newPatientItem);
+                
+                hideAddPatientModal();
+                showSuccess('Patient added successfully!');
+                
+            } catch (error) {
+                console.error('Add patient error:', error);
+                
+                if (error.message.includes('Expected JSON')) {
+                    showError('Session might have expired. Please refresh and login again.');
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    showError(error.message);
+                }
+            } finally {
+                const addBtn = document.querySelector('#addPatientModal .btn-success');
+                if (addBtn) {
+                    addBtn.disabled = false;
+                    addBtn.textContent = 'Add Patient';
+                }
+            }
+        }
+
+        function setupEventListeners() {
+            elements.patientSearch.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const patientItems = document.querySelectorAll('.patient-item');
+                
+                patientItems.forEach(item => {
+                    const patientName = item.querySelector('.patient-name').textContent.toLowerCase();
+                    const patientId = item.querySelector('.patient-id').textContent.toLowerCase();
+                    
+                    if (patientName.includes(searchTerm) || patientId.includes(searchTerm)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+            
+            window.addEventListener('resize', () => {
+                if (chart) {
+                    chart.resize();
+                }
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target === elements.addReadingModal) {
+                    hideAddReadingModal();
+                }
+                if (event.target === elements.addPatientModal) {
+                    hideAddPatientModal();
+                }
+            });
+        }
+
+        function showError(message) {
+            console.error(message);
+            alert(message);
+        }
+
+        function showSuccess(message) {
+            console.log(message);
+            alert(message);
+        }
+
+        function logout() {
+            fetch('/logout', {
+                method: 'POST',
+                credentials: 'include'
+            }).then(() => {
+                window.location.href = '/login';
+            });
+        }
+
+        // Session timeout management
+        let sessionTimeout;
+        function resetSessionTimer() {
+            clearTimeout(sessionTimeout);
+            sessionTimeout = setTimeout(() => {
+                document.getElementById('authOverlay').style.display = 'flex';
+            }, 30 * 60 * 1000);
+        }
+
+        // Initialize session timer
+        resetSessionTimer();
+        document.addEventListener('mousemove', resetSessionTimer);
+        document.addEventListener('keypress', resetSessionTimer);
+        document.addEventListener('click', resetSessionTimer);
+    </script>
+</body>
+</html>
